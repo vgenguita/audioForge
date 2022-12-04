@@ -1,20 +1,9 @@
-#FROM alpine:latest
-FROM debian:stable-slim
+FROM alpine:latest
 MAINTAINER Victor G.Enguita <victor@brutalix.org>
 
-RUN mkdir -p /media/rip /media/flac /media/alac
-    && mkdir -p /root/.config/whipper
-COPY depFiles/sources.list /etc/apt/sources.list
-COPY depFiles/requirements.txt /tmp/requirements.txt
-COPY depFiles/whipper.conf /root/.config/whipper/whipper.conf
+COPY --chmod=777 depFiles/ripCD.sh /usr/local/bin/ripCD.sh
 COPY --chmod=777 depFiles/audioforge.sh /usr/local/bin/audioforge.sh
-COPY --chmod=777  depFiles/convert_audio.py /usr/local/bin/convert_audio.py
-RUN apt update \
-    && apt -y upgrade \
-    && apt -y install ffmpeg whipper python3-pip \
-        firmware-amd-graphics libgl1-mesa-dri libglx-mesa0 mesa-vulkan-drivers \
-    && apt-get autoremove --yes \
-    && rm -rf /var/lib/{apt,dpkg,cache,log}/ \
-    && pip install -r /tmp/requirements.txt
-CMD [ls -lah /media]
-#ENTRYPOINT ["/usr/local/bin/audioforge.sh"]
+COPY --chmod=777 depFiles/convert_audio.py /usr/local/bin/convert_audio.py
+RUN apk add --no-cache libcddb cd-discid cdrkit curl py3-pip cdparanoia gnu-libiconv jpegoptim optipng cdrdao ffmpeg
+RUN pip install sacad
+ENTRYPOINT ["/usr/local/bin/ripCD.sh"]
