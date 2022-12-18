@@ -2,3 +2,5 @@ RIP
 .vscode
 albums.csv
 albums.ods
+depFiles/__pycache__/
+depFiles/albums.json

@@ -6,8 +6,8 @@ then
 else
     VOLUME=/tmp
     RIP_DIR=RIP
-    ALAC_DIR=flac
-    FLAC_DIR=alac
+    ALAC_DIR=ALAC_RIP
+    FLAC_DIR=FLAC_DIR
     DEV=/dev/cdrom
     ACTION=$1
     if [ $ACTION = 'r' ] || [ $ACTION = 'e' ] || [ $ACTION = 'b' ] || [ $ACTION = 'toc' ]; then
@@ -109,6 +109,9 @@ else
             fi
             grep -qF -- $DISCID ${CSVFILE} || echo ""$DISCID","$PERFORMER","$ALBUM_TITLE","$YEAR","$DISCNUMBER"" >> ${CSVFILE}
             RIP='s'
+            if [ $DISCNUMBER -gt 1 ]; then
+                    ALBUM_TITLE="$ALBUM_TITLE (CD $DISCNUMBER)"
+                fi
             if [ -d "$VOLUME/$RIP_DIR/$PERFORMER/$ALBUM_TITLE" ]; then
                 read -r -p "Directory already exists, do you want to rip audio cd?:  [Y/n] " RIP
                     case $RIP in
@@ -128,16 +131,13 @@ else
             if [ $RIP = 's' ];then
                 SACAD_PERFORMER=\"${PERFORMER}\"
                 SACAD_ALBUM_TITLE=\"${ALBUM_TITLE}\"
-                if [ $DISCNUMBER -gt 1 ]; then
-                    ALBUM_TITLE="$ALBUM_TITLE (CD $DISCNUMBER)"
-                fi
                 if [ ! -d "$VOLUME/$RIP_DIR/$PERFORMER/$ALBUM_TITLE" ] && [ $RIP = 's' ]; then
                 mkdir -p "$VOLUME/$RIP_DIR/$PERFORMER/$ALBUM_TITLE"
                 fi
                 sacad "$SACAD_PERFORMER" "$SACAD_ALBUM_TITLE"  500 "$VOLUME/$RIP_DIR/$PERFORMER/$ALBUM_TITLE/AlbumArt.jpg"
                 cd "$VOLUME/$RIP_DIR/$PERFORMER/$ALBUM_TITLE"
                 #cdda2wav -vall cddb=0 -cddbp-server=gnudb.gnudb.org speed="$SPEED" -paranoia -B -D $DEV
-                cdda2wav -vall cddb=0 -cddbp-server=gnudb.gnudb.org --speed 8-paranoia -B -D $DEV
+                cdda2wav -vall cddb=0 -cddbp-server=gnudb.gnudb.org -paranoia -B -D $DEV
                 TOTALTRACKS=$(grep TTITLE audio.cddb |wc -l)
                 GENRE=$(grep DGENRE audio.cddb | awk -F '=' '{print $2}')
                 YEAR=$(grep DYEAR audio.cddb | awk -F '=' '{print $2}')
@@ -192,6 +192,28 @@ else
         sed -i -e '/TITLE/s/\\"//g' "$VOLUME/$RIP_DIR/$PERFORMER/$ALBUM_TITLE/$ALBUM_TITLE.toc"
     fi
     if [ $ENCODE = 's' ];then
+        # cd $VOLUME/$RIP_DIR
+        # find . -name '*.wav' | while read line; do
+        #     artistCmd=$(ffmpeg -i "${line}" 2>&1 | grep artist | awk -F: '{print $2}' | sed -e 's/^[[:space:]]*//')
+        #     trackCmd=$(ffmpeg -i "${line}" 2>&1 | grep track | awk -F: '{print $2}' | sed -e 's/^[[:space:]]*//')
+        #     titleCmd=$(ffmpeg -i "${line}" 2>&1 | grep title | awk -F: '{print $2}' | sed -e 's/^[[:space:]]*//')
+        #     if [ $CODEC = 'flac' ]; then
+        #         OUTDIR="$VOLUME/FLAC_RIP"
+        #         EXT="flac"
+        #     fi
+        #      if [ $CODEC = 'alac' ]; then
+        #         OUTDIR="$VOLUME/ALAC_RIP"
+        #         EXT="m4a"
+        #     fi
+        #     OUTSUBDIR=$(echo $line | sed 's/^..//' | awk -F/ '{print $1 "/" $2}')
+        #     OUTFILE=$(echo $line | sed 's/^..//')
+        #     if [ ! -d "$OUTDIR/$OUTSUBDIR" ]; then
+        #         echo "se crea $OUTDIR/$OUTSUBDIR"
+        #         mkdir -p "$OUTDIR/$OUTSUBDIR"
+        #     fi
+        #     ffmpeg -i "${line}" -loglevel verbose -map_metadata 0 -c $CODEC -movflags use_metadata_tags -metadata album_artist="${artistCmd}" "$OUTDIR/${OUTFILE%wav}$EXT"
+        #     #echo "ffmpeg -i \"${line}\" -map_metadata 0 -c $CODEC -movflags use_metadata_tags \"$OUTDIR/${OUTFILE%wav}$EXT\""
+        # done
         python3 /usr/local/bin/convert_audio.py $VOLUME/$RIP_DIR/ $CODEC
         #DISCID=$(cd-discid $DEV| awk '{print $1}')
         #cddb_query -s gnudb.gnudb.org -P http read misc 0x$DISCID
